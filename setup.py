@@ -14,7 +14,7 @@ setup(
     packages=['macsy_tweet_liwc'],
     install_requires=[
         'numpy',
-        'git+https://github.com/uob-mediapatterns/macsy',
-        'git+https://github.com/uob-mediapatterns/liwc'
+        'macsy@git+https://github.com/uob-mediapatterns/macsy',
+        'liwc@git+https://github.com/uob-mediapatterns/liwc'
     ]
 )
