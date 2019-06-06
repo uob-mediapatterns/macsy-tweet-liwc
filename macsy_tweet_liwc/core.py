@@ -1,11 +1,8 @@
 from __future__ import division
 
-from macsy.api import BlackboardAPI
-
-from liwc import LIWC, tokenize
+from liwc import tokenize
 
 import pymongo.errors
-import json
 
 from bson.son import SON
 
@@ -14,15 +11,6 @@ import numpy as np
 from datetime import datetime, timedelta
 
 import logging
-
-def load(settings_path):
-    with open(settings_path) as f:
-        settings = json.load(f)
-
-    bbapi = BlackboardAPI(settings)
-    db = bbapi._BlackboardAPI__db
-
-    return bbapi, db
 
 def better_generator(f):
     def f_(*args, **kwargs):
@@ -188,13 +176,8 @@ def saver(db):
         (dt, grouped) = yield
         grouped = clean(grouped)
 
-def combined():
-    with open('LIWC2007.txt', 'r') as liwc_file:
-        liwc = LIWC(liwc_file)
-
-    bbapi, db = load('settings.json')
-
-    tweets             = get_tweets(bbapi)
+def pipeline(liwc, bbapi, db, filter):
+    tweets             = get_tweets(bbapi, filter)
     filtered           = filter_and_tag(tweets)
     filtered_with_liwc = filtered * liwc_tweets(liwc)
     grouped            = group(liwc, bbapi, filtered_with_liwc)

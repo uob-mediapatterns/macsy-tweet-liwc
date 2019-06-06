@@ -15,6 +15,7 @@ setup(
     install_requires=[
         'numpy',
         'macsy@git+https://github.com/uob-mediapatterns/macsy',
-        'liwc@git+https://github.com/uob-mediapatterns/liwc'
+        'liwc@git+https://github.com/uob-mediapatterns/liwc',
+        'python-dateutil'
     ]
 )
