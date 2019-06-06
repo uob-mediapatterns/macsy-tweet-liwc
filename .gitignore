@@ -125,3 +125,6 @@ dmypy.json
 
 # LIWC dictionaries
 LIWC*
+
+# Ignore macsy settings file
+settings.json
