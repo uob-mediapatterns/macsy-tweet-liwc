@@ -54,7 +54,6 @@ def get_tweets(bbapi, filter={}):
     yield
     tweets_col = bbapi.load_blackboard("TWEET").document_manager.get_collection()
 
-    # last_id is the last ID this produced, not just recieved
     last_id = None
     while True:
         if last_id is None:
@@ -103,11 +102,7 @@ def liwc_tweets(liwc):
         (vector, total, total_dic) = it
         values = liwc.human_values(vector)
         tweet = yield tweet[1:] + (vector, total, total_dic, values)
-
-
-# potentially just make an accumulator do the grouping too?
-# and then we just output time + tag + accumulated values
-
+        
 @better_generator
 def group(liwc, bbapi, tweets):
     locs_col = bbapi.load_blackboard('LOCATION').document_manager.get_collection()
@@ -171,8 +166,7 @@ def saver(db):
             logging.debug("Retrying")
             continue
 
-        # maybe output summary info
-        # sum total tweets for the period?
+        # maybe output summary info, sum total tweets for the period?
         (dt, grouped) = yield
         grouped = clean(grouped)
 
