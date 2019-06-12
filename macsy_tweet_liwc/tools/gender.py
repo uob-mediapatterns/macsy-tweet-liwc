@@ -28,8 +28,7 @@ def welford(zero):
 
         mean = M
         std  = np.sqrt(S/(k-1))
-        var  = std / np.sqrt(k)
-        return (mean, var, k)
+        return (mean, std, k)
     
     action = yield
 
@@ -132,7 +131,7 @@ def worker(macsy_settings, liwc_dict, start_date, end_date):
     p = pipeline(liwc, bbapi, db, filter)
 
     labels = [v for v,_ in liwc.categories.values()] + liwc.value_names + ["wc","wc_dic"]
-    labels = ["gender"] + ["{}_{}".format(l,t) for t in ["mean","var"] for l in labels] + ["num_tweets"]
+    labels = ["gender"] + ["{}_{}".format(l,t) for t in ["mean","std"] for l in labels] + ["num_tweets"]
 
     writer = csv.writer(sys.stdout)
     writer.writerow(labels)
