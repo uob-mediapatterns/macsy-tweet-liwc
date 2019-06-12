@@ -40,6 +40,7 @@ class BetterGenerator:
     def send(self, v):
         return self.g.send(v)
 
+    # Really this assumes they're both infinite
     @better_generator
     def __mul__(self, other):
         i = yield
@@ -47,6 +48,22 @@ class BetterGenerator:
             a_o = self.send(i)
             b_o = other.send(a_o)
             i = yield b_o
+
+    # Assumes the second is infinite
+    @better_generator
+    def __add__(self, other):
+        i = yield
+        while True:
+            try:
+                i = yield self.send(i)
+            except StopIteration:
+                break
+        while True:
+            i = yield other.send(i)
+
+    def __or__(self, other):
+        other.send(self)
+        return other
 
 # I should move this into macsy as a 'robust' search, because it can recover from failures
 @better_generator
@@ -72,10 +89,13 @@ def get_tweets(bbapi, filter={}):
             for tweet in tweets:
                 yield tweet
                 last_id = tweet['_id']
+
+            break
         except pymongo.errors.OperationFailure as e:
             logging.exception(e)
             logging.debug("Retrying from {}".format(last_id))
 
+# TODO Just like with gender, add an unknown location value?
 @better_generator
 def filter_and_tag(tweets):
     yield
@@ -102,7 +122,7 @@ def liwc_tweets(liwc):
         (vector, total, total_dic) = it
         values = liwc.human_values(vector)
         tweet = yield tweet[1:] + (vector, total, total_dic, values)
-        
+
 @better_generator
 def group(liwc, bbapi, tweets):
     locs_col = bbapi.load_blackboard('LOCATION').document_manager.get_collection()
@@ -160,14 +180,15 @@ def saver(db):
         ))
 
         try:
-            db["SWDATASERIES"].insert(doc)
+            db["SWDATASERIES"].replace_one({"_id": doc["_id"]}, doc, upsert=True)
         except pymongo.errors.OperationFailure as e:
             logging.exception(e)
             logging.debug("Retrying")
             continue
 
-        # maybe output summary info, sum total tweets for the period?
-        (dt, grouped) = yield
+        total_tweets = sum(gen[-1] for loc in doc["y"].values() for gen in loc.values())
+
+        (dt, grouped) = yield (doc["_id"], total_tweets)
         grouped = clean(grouped)
 
 def pipeline(liwc, bbapi, db, filter):

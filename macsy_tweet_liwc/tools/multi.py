@@ -47,7 +47,8 @@ def worker(args):
     p = pipeline(liwc, bbapi, db, filter)
 
     while True:
-        p.send(None)
+        _id, total_tweets = p.send(None)
+        logging.debug("{}: {} tweets".format(_id['x'].isoformat(), total_tweets))
 
     return None
 
