@@ -34,6 +34,9 @@ class BetterGenerator:
     def __next__(self):
         return self.send(None)
 
+    def next(self):
+        return self.__next__()
+
     def __call__(self, v):
         return self.send(v)
 
