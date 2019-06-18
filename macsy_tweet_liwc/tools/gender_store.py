@@ -71,7 +71,8 @@ def worker(macsy_settings, liwc_dict, start_date, end_date):
     for g in"mf":
         count = tweets_col.find({"_id": _id_filter, "G": g}).count()
         genders[g] = {
-            "fp": np.memmap("{}_{}x{}_tweets.npy".format(g, count, len(labels)), mode="w+", dtype=np.int64, shape=(count, len(labels))),
+            #"fp": np.memmap("{}_{}x{}_tweets.npy".format(g, count, len(labels)), mode="w+", dtype=np.int64, shape=(count, len(labels))),
+            "fp": np.lib.format.open_memmap("{}_tweets.npy".format(g), mode="w+", dtype=np.int64, shape=(count, len(labels))),
             "i": 0
         }
 

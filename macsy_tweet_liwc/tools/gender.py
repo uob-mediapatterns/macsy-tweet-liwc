@@ -173,14 +173,15 @@ def worker(macsy_settings, liwc_dict, start_date, end_date):
     labels = [v for v,_ in liwc.categories.values()] + liwc.value_names + ["wc","wc_dic"]
     labels = ["gender"] + ["{}_{}".format(l,t) for t in ["mean","std"] for l in labels] + ["num_tweets"]
 
-    writer = csv.writer(sys.stdout)
-    writer.writerow(labels)
-    for o in p:
-        if o is None:
-            continue
+    with open("result.csv","w") as f:
+        writer = csv.writer(f)
+        writer.writerow(labels)
+        for o in p:
+            if o is None:
+                continue
 
-        writer.writerow(['m'] + list(o['m'][0]) + list(o['m'][1]) + [o['m'][2]])
-        writer.writerow(['f'] + list(o['f'][0]) + list(o['f'][1]) + [o['f'][2]])
+            writer.writerow(['m'] + list(o['m'][0]) + list(o['m'][1]) + [o['m'][2]])
+            writer.writerow(['f'] + list(o['f'][0]) + list(o['f'][1]) + [o['f'][2]])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

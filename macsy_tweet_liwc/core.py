@@ -75,6 +75,7 @@ def get_tweets(bbapi, filter={}):
     tweets_col = bbapi.load_blackboard("TWEET").document_manager.get_collection()
 
     last_id = None
+    count = 0
     while True:
         if last_id is None:
             filter_ = filter
@@ -92,6 +93,10 @@ def get_tweets(bbapi, filter={}):
             for tweet in tweets:
                 yield tweet
                 last_id = tweet['_id']
+                count += 1
+                if count % 5000 == 0:
+                    logging.debug("{}: {}".format(count, tweet['_id'].generation_time))
+
 
             break
         except pymongo.errors.OperationFailure as e:
