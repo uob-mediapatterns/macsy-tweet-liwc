@@ -45,6 +45,37 @@ def welford(zero):
 
         action = yield response
 
+'''
+TODO Remove passing zero, make it somethign you put into the accumulator before starting
+'''
+@better_generator
+def mean_and_std(zero):
+    k = 0
+
+    data = None
+
+    def get():
+        if k < 2:
+            return (np.nan, np.nan, np.nan)
+
+        # TODO Use numpy mean and std to get it
+        return (mean, std, k)
+    
+    action = yield
+
+    while True:
+        if action is None:
+            response = get()
+        else:
+            x = action
+            if k == 0:
+                data = x
+            else:
+                data = np.vstack((data, x))
+            response = None
+
+        action = yield response
+
 @better_generator
 def extract():
     tweet = yield
@@ -63,10 +94,19 @@ def extract():
 #        if tweet[2] in "mf":
 #            yield tweet
 
+'''
+TODO
+
+Add alternative accumulate which stores all values and then sums at the end
+I estimated 35GB of ram required, which is fine on the servers
+
+Probably best to make it a flag via argparse
+
+'''
 @better_generator
-def accumulate(liwc):
+def accumulate(liwc, accumulator=welford):
     # LIWC, Schwartz, wc, wc_dic
-    genders = {g: welford(np.zeros(len(liwc.categories) + len(liwc.value_names) + 2)) for g in "mfn"}
+    genders = {g: accumulator(np.zeros(len(liwc.categories) + len(liwc.value_names) + 2)) for g in "mfn"}
 
     def get():
         return {g: v.send(None) for g, v in genders.items()}

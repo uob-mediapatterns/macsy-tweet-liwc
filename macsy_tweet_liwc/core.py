@@ -116,15 +116,20 @@ def filter_and_tag(tweets):
         yield (text, _id, gender, loc)
 
 @better_generator
-def liwc_tweets(liwc):
+def liwc_tweets(liwc, normalize=True, compute_values=True):
     tweet = yield
     while True:
-        it = liwc.start()
+        it = liwc.start(normalize=normalize)
         it.send(tokenize(tweet[0]))
 
         (vector, total, total_dic) = it
-        values = liwc.human_values(vector)
-        tweet = yield tweet[1:] + (vector, total, total_dic, values)
+        if compute_values:
+            values = liwc.human_values(vector)
+            result = tweet[1:] + (vector, total, total_dic, values)
+        else:
+            result = tweet[1:] + (vector, total, total_dic)
+
+        tweet = yield result
 
 @better_generator
 def group(liwc, bbapi, tweets):
