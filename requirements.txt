@@ -2,3 +2,4 @@ numpy==1.16.1
 git+https://github.com/uob-mediapatterns/macsy,
 git+https://github.com/uob-mediapatterns/liwc
 python-dateutil==2.7.3
+pytz==2005k

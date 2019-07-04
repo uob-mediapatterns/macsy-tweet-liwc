@@ -16,6 +16,7 @@ setup(
         'numpy',
         'macsy@git+https://github.com/uob-mediapatterns/macsy',
         'liwc@git+https://github.com/uob-mediapatterns/liwc',
-        'python-dateutil'
+        'python-dateutil',
+        'pytz'
     ]
 )

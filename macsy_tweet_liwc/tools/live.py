@@ -5,7 +5,8 @@ from macsy.api import BlackboardAPI
 from liwc import LIWC
 from macsy_tweet_liwc.core import get_tweets, liwc_tweets, better_generator
 import dateutil.parser
-from datetime import datetime, timezone
+from datetime import datetime
+import pytz
 from dateutil.relativedelta import relativedelta, MO
 import json
 from bson.objectid import ObjectId
@@ -91,7 +92,7 @@ def worker(macsy_settings, liwc_dict):
     with io.open(liwc_dict, 'r', encoding="utf-8") as liwc_file:
         liwc = LIWC(liwc_file)
 
-    now = datetime.now(tz=timezone.utc)
+    now = datetime.now(tz=pytz.utc)
 
     documents = list(db["TWEET_LIWC_LIVE"].find())
 
@@ -100,7 +101,7 @@ def worker(macsy_settings, liwc_dict):
     # change datetime to UTC
     for doc in documents:
         doc["state"]["M"] = np.array(doc["state"]["M"], dtype=np.float64)
-        doc["state"]["last_updated"] = doc["state"]["last_updated"].replace(tzinfo=timezone.utc)
+        doc["state"]["last_updated"] = doc["state"]["last_updated"].replace(tzinfo=pytz.utc)
         doc["num_interval"] = int(doc["num_interval"])
 
     # for each last updated, set it to the greater of last updated and oldest possible interval
