@@ -80,7 +80,7 @@ def floor_dt(interval, dt):
     elif interval == "day":
         return dt.replace(hour=0, minute=0, second=0, microsecond=0)
     elif interval == "week":
-        return floor_day(dt) + relativedelta(weekday=MO(-1))
+        return floor_dt("day", dt) + relativedelta(weekday=MO(-1))
 
 
 def worker(macsy_settings, liwc_dict):
@@ -154,10 +154,12 @@ def worker(macsy_settings, liwc_dict):
                 doc["state"]["M"] += (vector[26:26+6] - doc["state"]["M"]) / doc["state"]["k"]
                 doc["state"]["last_updated"] = _id.generation_time
     
+    # added another interval to the start to make it wait an interval,
+    # might result in sporadic updates, oh well. At least the results will be more correct as we dont 
+    # prematurely change period while there may have been tweets to count
+    # could just remove this entirely and shift the graph in the interface
     for doc in documents:
-        # deal with case where there were no new tweets, but we need to insert zeros into the timeline
-        # given the current time
-        start = floor_dt(doc["interval"], doc["state"]["last_updated"])
+        start = floor_dt(doc["interval"], doc["state"]["last_updated"]) + intervalToRelativeDelta(doc["interval"])
         end   = start + intervalToRelativeDelta(doc["interval"])
         while now >= end:
             x = list(doc["state"]["M"]) # m is a vector, remember
