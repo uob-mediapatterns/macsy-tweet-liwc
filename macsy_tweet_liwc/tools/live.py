@@ -135,7 +135,7 @@ def worker(macsy_settings, liwc_dict):
             if _id.generation_time > oldestv:
                 start = floor_dt(doc["interval"], doc["state"]["last_updated"])
                 end   = start + intervalToRelativeDelta(doc["interval"])
-                while not (start <= _id.generation_time < end):
+                while _id.generation_time >= end:
                     x = list(doc["state"]["M"]) # m is a vector, remember
                     y = start
 
@@ -159,7 +159,7 @@ def worker(macsy_settings, liwc_dict):
         # given the current time
         start = floor_dt(doc["interval"], doc["state"]["last_updated"])
         end   = start + intervalToRelativeDelta(doc["interval"])
-        while not (start <= now < end):
+        while now >= end:
             x = list(doc["state"]["M"]) # m is a vector, remember
             y = start
 
