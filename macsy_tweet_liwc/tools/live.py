@@ -136,8 +136,8 @@ def worker(macsy_settings, liwc_dict):
                 start = floor_dt(doc["interval"], doc["state"]["last_updated"])
                 end   = start + intervalToRelativeDelta(doc["interval"])
                 while _id.generation_time >= end:
-                    x = list(doc["state"]["M"]) # m is a vector, remember
-                    y = start
+                    x = start
+                    y = list(doc["state"]["M"]) # m is a vector, remember
 
                     doc["xs"] = doc["xs"][-doc["num_interval"]+1:] + [x]
                     doc["ys"] = doc["ys"][-doc["num_interval"]+1:] + [y]
@@ -162,8 +162,8 @@ def worker(macsy_settings, liwc_dict):
         start = floor_dt(doc["interval"], doc["state"]["last_updated"]) + intervalToRelativeDelta(doc["interval"])
         end   = start + intervalToRelativeDelta(doc["interval"])
         while now >= end:
-            x = list(doc["state"]["M"]) # m is a vector, remember
-            y = start
+            x = start
+            y = list(doc["state"]["M"]) # m is a vector, remember
 
             doc["xs"] = doc["xs"][-doc["num_interval"]+1:] + [x]
             doc["ys"] = doc["ys"][-doc["num_interval"]+1:] + [y]
