@@ -143,7 +143,7 @@ def worker(macsy_settings, liwc_dict, collection):
             # I suppose a good question is what is the oldest tweet location crawler ever inserts?
 
             # worst case is we skip some tweets? not a huge issue
-            if _id.generation_time > doc["state"]["last_updated"]:
+            if _id.generation_time >= doc["state"]["last_updated"]:
                 start = floor_dt(doc["interval"], doc["state"]["last_updated"])
                 end   = start + intervalToRelativeDelta(doc["interval"])
                 while _id.generation_time >= end:
