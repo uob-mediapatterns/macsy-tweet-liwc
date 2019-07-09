@@ -17,7 +17,7 @@ import csv
 import sys
 
 '''
-Could make it a non-datebased collection
+Could make it a non-datebased blackboard
 Do I transpose xs? potentially easier
 
 {
@@ -31,6 +31,7 @@ Do I transpose xs? potentially easier
         ...
     ],
     xs: [ Date, Date, Date, Date... ], # len(xs) === len(ys) === num_interval
+    next_x: Date, # used for display purposes
     state: {
         k: Int,
         M: Double,
@@ -83,7 +84,7 @@ def floor_dt(interval, dt):
         return floor_dt("day", dt) + relativedelta(weekday=MO(-1))
 
 
-def worker(macsy_settings, liwc_dict, collection):
+def worker(macsy_settings, liwc_dict, blackboard):
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
 
@@ -94,7 +95,7 @@ def worker(macsy_settings, liwc_dict, collection):
 
     now = datetime.now(tz=pytz.utc)
 
-    documents = list(db[collection].find())
+    documents = list(db[blackboard].find())
 
     # convert to numpy as it's easier to work with
     # make sure to convert back when saving to mongo
@@ -143,6 +144,7 @@ def worker(macsy_settings, liwc_dict, collection):
                     y = list(doc["state"]["M"]) # m is a vector, remember
 
                     doc["xs"] = doc["xs"][-doc["num_interval"]+1:] + [x]
+                    doc["next_x"] = end
                     doc["ys"] = doc["ys"][-doc["num_interval"]+1:] + [y]
 
                     doc["state"]["M"] = np.zeros(6, dtype=np.float64)
@@ -162,15 +164,15 @@ def worker(macsy_settings, liwc_dict, collection):
     for doc in documents:
         doc["state"]["M"] = list(doc["state"]["M"])
 
-        db[collection].find_one_and_replace({"_id": doc["_id"]}, doc)
+        db[blackboard].find_one_and_replace({"_id": doc["_id"]}, doc)
         
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser("tweet-liwc-live", description="Pulls tweets from before 30 minutes ago from TWEET blackboard, processes them with LIWC, and takes period averages and places them into the target blackboard")
     parser.add_argument("liwc_dict", help="file containing LIWC dictionary", type=str)
     parser.add_argument("macsy_settings", help="file containing Macsy settings", type=str)
-    parser.add_argument("--collection", help="collection to store the series", nargs='?', const=1, default="TWEET_LIWC_LIVE", type=str)
+    parser.add_argument("--blackboard", help="blackboard to store the series", nargs='?', const=1, default="TWEET_LIWC_LIVE", type=str)
 
     args = parser.parse_args()
 
-    worker(args.macsy_settings, args.liwc_dict, args.collection)
+    worker(args.macsy_settings, args.liwc_dict, args.blackboard)
