@@ -24,13 +24,13 @@ Do I transpose xs? potentially easier
     _id: Int,
     interval: String,
     num_interval: Int, # eg, for a year it's 52, and interval would be "week"
-    xs: [
-        [ Int, Int, Int, Int ... ],
-        [ Int, Int, Int, Int ... ],
-        [ Int, Int, Int, Int ... ],
+    ys: [
+        [ Float, Float, Float, Float ... ],
+        [ Float, Float, Float, Float ... ],
+        [ Float, Float, Float, Float ... ],
         ...
     ],
-    ys: [ Date, Date, Date, Date... ], # len(ys) === num_interval
+    xs: [ Date, Date, Date, Date... ], # len(xs) === len(ys) === num_interval
     state: {
         k: Int,
         M: Double,
@@ -116,12 +116,15 @@ def worker(macsy_settings, liwc_dict, collection):
             doc["state"]["last_updated"] = oldest_possible
 
     oldest = min(doc["state"]["last_updated"] for doc in documents)
+    # Only do tweets up until 30 minutes ago, so we can be sure they have settled
+    newest = now - relativedelta(minutes=30)
     
     # then, starting with the oldest last updated, go through tweets
     # only work with tweets extraction from the 52 locations
     filter = {
         "_id": {
             "$gte": ObjectId.from_datetime(oldest),
+            "$lt": ObjectId.from_datetime(newest)
         },
         "L": {
             "$exists": True,
@@ -132,17 +135,6 @@ def worker(macsy_settings, liwc_dict, collection):
     # _id, vector, wc, wc_dic, values (last is only there if we ask for it)
     for (_id, vector, _, _, _) in pipeline(liwc, bbapi, filter):
         for doc in documents:
-            # I think tweets can be inserted into the past depending on how the crawler works?
-            # idk, im just worried that tweet crawler might go far back in time and change history, after
-            # we think we are done with the history
-
-            # proper way to do this would be to add tag to all tweets we care about
-            # and clear it once we've checked
-            # and always have a running mean for every sample
-            # Makes it massively more complicated. Alternative is to just defer by half an hour or something?
-            # I suppose a good question is what is the oldest tweet location crawler ever inserts?
-
-            # worst case is we skip some tweets? not a huge issue
             if _id.generation_time >= doc["state"]["last_updated"]:
                 start = floor_dt(doc["interval"], doc["state"]["last_updated"])
                 end   = start + intervalToRelativeDelta(doc["interval"])
@@ -165,26 +157,7 @@ def worker(macsy_settings, liwc_dict, collection):
                 doc["state"]["M"] += (vector[26:26+6] - doc["state"]["M"]) / doc["state"]["k"]
                 doc["state"]["last_updated"] = _id.generation_time
     
-    # added another interval to the start to make it wait an interval,
-    # might result in sporadic updates, oh well. At least the results will be more correct as we dont 
-    # prematurely change period while there may have been tweets to count
-    # could just remove this entirely and shift the graph in the interface - much safer
-    for doc in documents:
-        start = floor_dt(doc["interval"], doc["state"]["last_updated"]) + intervalToRelativeDelta(doc["interval"])
-        end   = start + intervalToRelativeDelta(doc["interval"])
-        while now >= end:
-            x = start
-            y = list(doc["state"]["M"]) # m is a vector, remember
-
-            doc["xs"] = doc["xs"][-doc["num_interval"]+1:] + [x]
-            doc["ys"] = doc["ys"][-doc["num_interval"]+1:] + [y]
-
-            doc["state"]["M"] = np.zeros(6, dtype=np.float64)
-            doc["state"]["k"] = 0
-            doc["state"]["last_updated"] = end
-
-            start = floor_dt(doc["interval"], doc["state"]["last_updated"])
-            end   = start + intervalToRelativeDelta(doc["interval"])
+    # Moved inserting empty xs/ys into the client side, as a graph shift
 
     for doc in documents:
         doc["state"]["M"] = list(doc["state"]["M"])

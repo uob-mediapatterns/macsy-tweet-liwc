@@ -93,6 +93,7 @@ def get_tweets(bbapi, filter={}):
             for tweet in tweets:
                 yield tweet
                 last_id = tweet['_id']
+                # TODO Move this to a separate stage so it's optional
                 count += 1
                 if count % 5000 == 0:
                     logging.debug("{}: {}".format(count, tweet['_id'].generation_time))
