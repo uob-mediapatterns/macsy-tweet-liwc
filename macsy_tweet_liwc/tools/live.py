@@ -83,7 +83,7 @@ def floor_dt(interval, dt):
         return floor_dt("day", dt) + relativedelta(weekday=MO(-1))
 
 
-def worker(macsy_settings, liwc_dict):
+def worker(macsy_settings, liwc_dict, collection):
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
 
@@ -94,7 +94,7 @@ def worker(macsy_settings, liwc_dict):
 
     now = datetime.now(tz=pytz.utc)
 
-    documents = list(db["TWEET_LIWC_LIVE"].find())
+    documents = list(db[collection].find())
 
     # convert to numpy as it's easier to work with
     # make sure to convert back when saving to mongo
@@ -104,22 +104,24 @@ def worker(macsy_settings, liwc_dict):
         doc["state"]["last_updated"] = doc["state"]["last_updated"].replace(tzinfo=pytz.utc)
         doc["num_interval"] = int(doc["num_interval"])
 
-    # for each last updated, set it to the greater of last updated and oldest possible interval
-    oldest = []
     for doc in documents:
         last_updated = doc["state"]["last_updated"]
         oldest_possible = floor_dt(doc["interval"], now) - doc["num_interval"]*intervalToRelativeDelta(doc["interval"])
         if last_updated < oldest_possible:
-            oldest.append(oldest_possible)
-        else:
-            oldest.append(last_updated)
+            # If a document has become so old the state is no longer relavent, clear it
+            doc["state"]["M"] = np.zeros(6, dtype=np.float64)
+            doc["state"]["k"] = 0
+            doc["state"]["xs"] = []
+            doc["state"]["ys"] = []
+            doc["state"]["last_updated"] = oldest_possible
 
+    oldest = min(doc["state"]["last_updated"] for doc in documents)
     
     # then, starting with the oldest last updated, go through tweets
     # only work with tweets extraction from the 52 locations
     filter = {
         "_id": {
-            "$gte": ObjectId.from_datetime(min(oldest)),
+            "$gte": ObjectId.from_datetime(oldest),
         },
         "L": {
             "$exists": True,
@@ -129,10 +131,19 @@ def worker(macsy_settings, liwc_dict):
     # NOTE Tweet isnt an object, it's a tuple
     # _id, vector, wc, wc_dic, values (last is only there if we ask for it)
     for (_id, vector, _, _, _) in pipeline(liwc, bbapi, filter):
-        # for each (zipped) oldest + document
-        for oldestv, doc in zip(oldest, documents):
-            # if tweet is AFTER last updated
-            if _id.generation_time > oldestv:
+        for doc in documents:
+            # I think tweets can be inserted into the past depending on how the crawler works?
+            # idk, im just worried that tweet crawler might go far back in time and change history, after
+            # we think we are done with the history
+
+            # proper way to do this would be to add tag to all tweets we care about
+            # and clear it once we've checked
+            # and always have a running mean for every sample
+            # Makes it massively more complicated. Alternative is to just defer by half an hour or something?
+            # I suppose a good question is what is the oldest tweet location crawler ever inserts?
+
+            # worst case is we skip some tweets? not a huge issue
+            if _id.generation_time > doc["state"]["last_updated"]:
                 start = floor_dt(doc["interval"], doc["state"]["last_updated"])
                 end   = start + intervalToRelativeDelta(doc["interval"])
                 while _id.generation_time >= end:
@@ -157,7 +168,7 @@ def worker(macsy_settings, liwc_dict):
     # added another interval to the start to make it wait an interval,
     # might result in sporadic updates, oh well. At least the results will be more correct as we dont 
     # prematurely change period while there may have been tweets to count
-    # could just remove this entirely and shift the graph in the interface
+    # could just remove this entirely and shift the graph in the interface - much safer
     for doc in documents:
         start = floor_dt(doc["interval"], doc["state"]["last_updated"]) + intervalToRelativeDelta(doc["interval"])
         end   = start + intervalToRelativeDelta(doc["interval"])
@@ -178,14 +189,15 @@ def worker(macsy_settings, liwc_dict):
     for doc in documents:
         doc["state"]["M"] = list(doc["state"]["M"])
 
-        db["TWEET_LIWC_LIVE"].find_one_and_replace({"_id": doc["_id"]}, doc)
+        db[collection].find_one_and_replace({"_id": doc["_id"]}, doc)
         
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("liwc_dict", help="file containing LIWC dictionary", type=str)
     parser.add_argument("macsy_settings", help="file containing Macsy settings", type=str)
+    parser.add_argument("--collection", help="collection to store the series", nargs='?', const=1, default="TWEET_LIWC_LIVE", type=str)
 
     args = parser.parse_args()
 
-    worker(args.macsy_settings, args.liwc_dict)
+    worker(args.macsy_settings, args.liwc_dict, args.collection)
