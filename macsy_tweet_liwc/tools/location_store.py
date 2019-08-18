@@ -67,7 +67,7 @@ def worker(macsy_settings, liwc_dict, start_date, end_date):
     tweets_col = bbapi.load_blackboard("TWEET").document_manager.get_collection()
     
     # pls symlink
-    location = {}
+    locations = {}
     for l in range(1,55):
         count = tweets_col.find({"_id": _id_filter, "L": l}).count()
         locations[l] = {
