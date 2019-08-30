@@ -24,7 +24,7 @@ def extract():
         tweet = yield (text, _id, location)
 
 def pipeline(liwc, bbapi, db, filter):
-    tweets = ( get_tweets(bbapi, filter)
+    tweets = ( get_tweets(bbapi, filter, "TWEET_PIPE_B")
              * extract()
              * liwc_tweets(liwc, normalize=False, compute_values=False))
 

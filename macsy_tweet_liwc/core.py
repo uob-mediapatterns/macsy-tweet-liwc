@@ -70,9 +70,9 @@ class BetterGenerator:
 
 # I should move this into macsy as a 'robust' search, because it can recover from failures
 @better_generator
-def get_tweets(bbapi, filter={}):
+def get_tweets(bbapi, filter={}, blackboard="TWEET"):
     yield
-    tweets_col = bbapi.load_blackboard("TWEET").document_manager.get_collection()
+    tweets_col = bbapi.load_blackboard(blackboard).document_manager.get_collection()
 
     last_id = None
     count = 0
