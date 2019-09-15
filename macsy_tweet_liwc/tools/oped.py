@@ -57,7 +57,7 @@ def worker(macsy_settings, liwc_dict):
         liwc = LIWC(liwc_file)
 
     filter = {
-        Fds: 1192 # NYT Opinion feed
+        "Fds": 1192 # NYT Opinion feed
     }
 
     p = pipeline(liwc, bbapi, db, filter)
