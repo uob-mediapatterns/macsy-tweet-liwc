@@ -68,11 +68,12 @@ class BetterGenerator:
         other.send(self)
         return other
 
+
 # I should move this into macsy as a 'robust' search, because it can recover from failures
 @better_generator
-def get_tweets(bbapi, filter={}, blackboard="TWEET"):
+def get_docs(bbapi, filter={}, blackboard="TWEET"):
     yield
-    tweets_col = bbapi.load_blackboard(blackboard).document_manager.get_collection()
+    col = bbapi.load_blackboard(blackboard).document_manager.get_collection()
 
     last_id = None
     count = 0
@@ -88,21 +89,22 @@ def get_tweets(bbapi, filter={}, blackboard="TWEET"):
             }
 
         try:
-            tweets = tweets_col.find(filter_).sort([('_id', 1)])
+            docs = col.find(filter_).sort([('_id', 1)])
 
-            for tweet in tweets:
-                yield tweet
-                last_id = tweet['_id']
+            for doc in docs:
+                yield doc
+                last_id = doc['_id']
                 # TODO Move this to a separate stage so it's optional
                 count += 1
                 if count % 5000 == 0:
-                    logging.debug("{}: {}".format(count, tweet['_id'].generation_time))
-
+                    logging.debug("{}: {}".format(count, doc['_id'].generation_time))
 
             break
         except pymongo.errors.OperationFailure as e:
             logging.exception(e)
             logging.debug("Retrying from {}".format(last_id))
+
+get_tweets = get_docs
 
 # TODO Just like with gender, add an unknown location value?
 @better_generator
@@ -121,21 +123,24 @@ def filter_and_tag(tweets):
 
         yield (text, _id, gender, loc)
 
+# expects tuple where first elem is the text
 @better_generator
-def liwc_tweets(liwc, normalize=True, compute_values=True):
-    tweet = yield
+def liwc_docs(liwc, normalize=True, compute_values=True):
+    doc = yield
     while True:
         it = liwc.start(normalize=normalize)
-        it.send(tokenize(tweet[0]))
+        it.send(tokenize(doc[0]))
 
         (vector, total, total_dic) = it
         if compute_values:
             values = liwc.human_values(vector)
-            result = tweet[1:] + (vector, total, total_dic, values)
+            result = doc[1:] + (vector, total, total_dic, values)
         else:
-            result = tweet[1:] + (vector, total, total_dic)
+            result = doc[1:] + (vector, total, total_dic)
 
         tweet = yield result
+
+liwc_tweets = liwc_docs
 
 @better_generator
 def group(liwc, bbapi, tweets):
