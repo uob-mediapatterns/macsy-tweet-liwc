@@ -72,7 +72,7 @@ def worker(macsy_settings, liwc_dict):
 
     p = pipeline(liwc, bbapi, db, filter)
 
-    pickle.dump(list(p), "/data/oped.pkl", protocol=pickle.HIGHEST_PROTOCOL)
+    pickle.dump(list(p), open("/data/oped.pkl", "wb"), protocol=pickle.HIGHEST_PROTOCOL)
 
 # Make sure to use server11 mongo settings (47017), and we only have data for 2019
 if __name__ == "__main__":
