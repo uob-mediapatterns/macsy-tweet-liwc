@@ -14,16 +14,27 @@ import csv
 import sys
 import pickle
 
+import hashlib
+
 # Yes I know my module is called macsy-tweet-liwc...
 # But it works on articles now, should just be macsy-liwc
 
+# throws out docs with no text or ones with text we have already seen
 @better_generator
 def only_good(docs):
+    s = set()
     yield
     while True:
         doc = docs.send(None)
         if doc.get('C', None) is None:
             continue
+
+        h = hashlib.md5(doc['C'].encode("utf-8")).hexdigest()
+	if h in s:
+            continue
+
+        s.add(h)
+
         yield doc
 
 @better_generator
