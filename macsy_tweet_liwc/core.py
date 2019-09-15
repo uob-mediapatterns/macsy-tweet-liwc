@@ -138,7 +138,7 @@ def liwc_docs(liwc, normalize=True, compute_values=True):
         else:
             result = doc[1:] + (vector, total, total_dic)
 
-        tweet = yield result
+        doc = yield result
 
 liwc_tweets = liwc_docs
 
