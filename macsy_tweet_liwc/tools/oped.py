@@ -18,6 +18,15 @@ import pickle
 # But it works on articles now, should just be macsy-liwc
 
 @better_generator
+def only_good(docs):
+    yield
+    while True:
+        doc = docs.send(None)
+        if doc.get('C', None) is None:
+            continue
+        yield doc
+
+@better_generator
 def extract():
     doc = yield
     while True:
@@ -32,7 +41,8 @@ def unnumpy():
         _id, vector, total, total_dic = yield (_id, vector.tolist(), total, total_dic)
 
 def pipeline(liwc, bbapi, db, filter):
-    docs = ( get_docs(bbapi, filter, "ARTICLE")
+    # use the or operator here?
+    docs = ( only_good(get_docs(bbapi, filter, "ARTICLE"))
            * extract()
            * liwc_docs(liwc, normalize=False, compute_values=False))
 
