@@ -173,6 +173,7 @@ def worker(macsy_settings, liwc_dict, blackboard, checkpoint):
                         doc["state"]["M"] = m
 
                         doc["num_intervals"] = 0
+                        logging.debug("checkpoint")
 
                 # add tweet to state
                 doc["state"]["k"] += 1
