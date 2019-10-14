@@ -110,14 +110,17 @@ def worker(macsy_settings, liwc_dict, blackboard):
         oldest_possible = floor_dt(doc["interval"], now) - doc["num_interval"]*intervalToRelativeDelta(doc["interval"])
         if last_updated < oldest_possible:
             # If a document has become so old the state is no longer relavent, clear it
+            # saves us having to create all the intermediate data, and then delete it
             doc["state"]["M"] = np.zeros(6, dtype=np.float64)
             doc["state"]["k"] = 0
-            doc["state"]["xs"] = []
-            doc["state"]["ys"] = []
             doc["state"]["last_updated"] = oldest_possible
+
+            doc["xs"] = []
+            doc["ys"] = []
 
     oldest = min(doc["state"]["last_updated"] for doc in documents)
     # Only do tweets up until 30 minutes ago, so we can be sure they have settled
+    # Alternative is to make a system which only updates as tweets are fully analysed etc, with some tag
     newest = now - relativedelta(minutes=30)
     
     # then, starting with the oldest last updated, go through tweets
@@ -141,11 +144,13 @@ def worker(macsy_settings, liwc_dict, blackboard):
                 end   = start + intervalToRelativeDelta(doc["interval"])
                 while _id.generation_time >= end:
                     x = start
-                    y = list(doc["state"]["M"]) # m is a vector, remember
+                    y = list(doc["state"]["M"])
+                    # Add the volume to the end of the list
+                    y += doc["state"]["k"]
 
                     doc["xs"] = doc["xs"][-doc["num_interval"]+1:] + [x]
-                    doc["next_x"] = end
                     doc["ys"] = doc["ys"][-doc["num_interval"]+1:] + [y]
+                    doc["next_x"] = end
 
                     doc["state"]["M"] = np.zeros(6, dtype=np.float64)
                     doc["state"]["k"] = 0
