@@ -84,7 +84,7 @@ def floor_dt(interval, dt):
         return floor_dt("day", dt) + relativedelta(weekday=MO(-1))
 
 
-def worker(macsy_settings, liwc_dict, blackboard):
+def worker(macsy_settings, liwc_dict, blackboard, checkpoint):
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
 
@@ -135,6 +135,9 @@ def worker(macsy_settings, liwc_dict, blackboard):
         }
     }
 
+    for doc in documents:
+        doc["num_intervals"] = 0
+
     # NOTE Tweet isnt an object, it's a tuple
     # _id, vector, wc, wc_dic, values (last is only there if we ask for it)
     for (_id, vector, _, _, _) in pipeline(liwc, bbapi, filter):
@@ -143,6 +146,8 @@ def worker(macsy_settings, liwc_dict, blackboard):
                 start = floor_dt(doc["interval"], doc["state"]["last_updated"])
                 end   = start + intervalToRelativeDelta(doc["interval"])
                 while _id.generation_time >= end:
+                    doc["num_intervals"] += 1
+
                     x = start
                     y = list(doc["state"]["M"])
                     # Add the volume to the end of the list
@@ -159,6 +164,16 @@ def worker(macsy_settings, liwc_dict, blackboard):
                     start = floor_dt(doc["interval"], doc["state"]["last_updated"])
                     end   = start + intervalToRelativeDelta(doc["interval"])
 
+                    if checkpoint is not None and doc["num_intervals"] == checkpoint:
+                        del doc["num_intervals"]
+
+                        m = doc["state"]["M"]
+                        doc["state"]["M"] = list(m)
+                        db[blackboard].find_one_and_replace({"_id": doc["_id"]}, doc)
+                        doc["state"]["M"] = m
+
+                        doc["num_intervals"] = 0
+
                 # add tweet to state
                 doc["state"]["k"] += 1
                 doc["state"]["M"] += (vector[26:26+6] - doc["state"]["M"]) / doc["state"]["k"]
@@ -170,6 +185,7 @@ def worker(macsy_settings, liwc_dict, blackboard):
     # too much as long as it works the next round
     for doc in documents:
         doc["state"]["M"] = list(doc["state"]["M"])
+        del doc["num_intervals"]
 
         db[blackboard].find_one_and_replace({"_id": doc["_id"]}, doc)
         
@@ -179,7 +195,8 @@ if __name__ == "__main__":
     parser.add_argument("liwc_dict", help="file containing LIWC dictionary", type=str)
     parser.add_argument("macsy_settings", help="file containing Macsy settings", type=str)
     parser.add_argument("--blackboard", help="blackboard to store the series", nargs='?', const=1, default="TWEET_LIWC_LIVE", type=str)
+    parser.add_argument("--checkpoint", help="store to mongo every n intervals", nargs='?', type=int)
 
     args = parser.parse_args()
 
-    worker(args.macsy_settings, args.liwc_dict, args.blackboard)
+    worker(args.macsy_settings, args.liwc_dict, args.blackboard, args.checkpoint)
