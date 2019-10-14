@@ -146,7 +146,7 @@ def worker(macsy_settings, liwc_dict, blackboard):
                     x = start
                     y = list(doc["state"]["M"])
                     # Add the volume to the end of the list
-                    y += doc["state"]["k"]
+                    y.append(doc["state"]["k"])
 
                     doc["xs"] = doc["xs"][-doc["num_interval"]+1:] + [x]
                     doc["ys"] = doc["ys"][-doc["num_interval"]+1:] + [y]
@@ -166,6 +166,8 @@ def worker(macsy_settings, liwc_dict, blackboard):
     
     # Moved inserting empty xs/ys into the client side, as a graph shift
 
+    # There's no checking for failed saving here, although it shouldn't matter
+    # too much as long as it works the next round
     for doc in documents:
         doc["state"]["M"] = list(doc["state"]["M"])
 
