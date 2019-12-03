@@ -135,6 +135,7 @@ def worker(macsy_settings, liwc_dict, blackboard, checkpoint):
         }
     }
 
+    # Might want to rename this, too close to num_interval, or change num_interval to max_interval
     for doc in documents:
         doc["num_intervals"] = 0
 
