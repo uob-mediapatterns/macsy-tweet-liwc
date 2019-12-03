@@ -72,19 +72,39 @@ def worker(macsy_settings, liwc_dict, start_date, end_date):
     labels = f.create_dataset("labels", (len(liwc.categories),), dtype=h5py.string_dtype())
     labels[:] = [v for v,_ in liwc.categories.values()]
 
-    indicators = f.create_dataset("indicators", (0, len(labels)), maxshape=(None, len(labels)), dtype=np.float64)
-    objectids  = f.create_dataset("objectids", (0, 12), maxshape=(None, 12), dtype=np.uint8)
+    # ObjectIDs would benefit from a different chunk size
+    # Would make it way more complicated however
+    chunk_size = 1024
 
-    p = pipeline(liwc, bbapi, db, filter)
-    for i, o in enumerate(p):
-        _id, _, vector, _, _ = o
-        
-        indicators.resize(i + 1, 0)
-        objectids.resize(i + 1, 0)
+    indicators = f.create_dataset("indicators", (0, len(labels)), maxshape=(None, len(labels)), chunks=(chunk_size,len(labels)), dtype=np.float64, compression="gzip", compression_opts=9)
+    objectids  = f.create_dataset("objectids", (0, 12), maxshape=(None, 12), chunks=(chunk_size,12), dtype=np.uint8)
 
-        # No longer storing word count
-        indicators[i,:] = vector
-        objectids[i,:] = np.frombuffer(_id.binary, dtype=np.uint8)
+
+    indicators_chunk = np.zeros((chunk_size, len(labels)), dtype=np.float64)
+    objectids_chunk = np.zeros((chunk_size, 12), dtype=np.uint8)
+
+    p = iter(pipeline(liwc, bbapi, db, filter))
+    done = False
+    while not done:
+        start = indicators.shape[0]
+        inserted = 0
+        for i in range(chunk_size):
+            try:
+                _id, _, vector, _, _ = next(p)
+            except StopIteration:
+                done = True
+                break
+
+            # No longer storing word count
+            indicators_chunk[i,:] = vector
+            objectids_chunk[i,:] = np.frombuffer(_id.binary, dtype=np.uint8)
+            inserted += 1
+
+        indicators.resize(start + inserted, 0)
+        objectids.resize(start + inserted, 0)
+
+        indicators[start:start+inserted] = indicators_chunk[0:inserted]
+        objectids[start:start+inserted] = objectids_chunk[0:inserted]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
