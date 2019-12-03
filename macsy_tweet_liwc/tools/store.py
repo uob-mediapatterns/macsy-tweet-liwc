@@ -28,7 +28,7 @@ def extract():
 def pipeline(liwc, bbapi, db, filter):
     tweets = ( get_tweets(bbapi, filter)
              * extract()
-             * liwc_tweets(liwc, normalize=True, compute_values=False))
+             * liwc_tweets(liwc, normalize=False, compute_values=False))
 
     return tweets
 
@@ -76,12 +76,15 @@ def worker(macsy_settings, liwc_dict, start_date, end_date):
     # Would make it way more complicated however
     chunk_size = 1024
 
+    # I know unnormalized indicators and wcs are only ever integers...
+    # But they're already stored as floats
     indicators = f.create_dataset("indicators", (0, len(labels)), maxshape=(None, len(labels)), chunks=(chunk_size,len(labels)), dtype=np.float64, compression="gzip", compression_opts=9)
+    wordcounts = f.create_dataset("wordcounts", (0,), maxshape=(None,), chunks=(chunk_size,), dtype=np.float64)
     objectids  = f.create_dataset("objectids", (0, 12), maxshape=(None, 12), chunks=(chunk_size,12), dtype=np.uint8)
-
 
     indicators_chunk = np.zeros((chunk_size, len(labels)), dtype=np.float64)
     objectids_chunk = np.zeros((chunk_size, 12), dtype=np.uint8)
+    wordcounts_chunk = np.zeros((chunk_size,), dtype=np.float64)
 
     p = iter(pipeline(liwc, bbapi, db, filter))
     done = False
@@ -90,7 +93,7 @@ def worker(macsy_settings, liwc_dict, start_date, end_date):
         inserted = 0
         for i in range(chunk_size):
             try:
-                _id, _, vector, _, _ = next(p)
+                _id, _, vector, wordcount, _ = next(p)
             except StopIteration:
                 done = True
                 break
@@ -98,13 +101,16 @@ def worker(macsy_settings, liwc_dict, start_date, end_date):
             # No longer storing word count
             indicators_chunk[i,:] = vector
             objectids_chunk[i,:] = np.frombuffer(_id.binary, dtype=np.uint8)
+            wordcounts_chunk[i] = wordcount
             inserted += 1
 
         indicators.resize(start + inserted, 0)
         objectids.resize(start + inserted, 0)
+        wordcounts.resize(start + inserted, 0)
 
         indicators[start:start+inserted] = indicators_chunk[0:inserted]
         objectids[start:start+inserted] = objectids_chunk[0:inserted]
+        wordcounts[start:start+inserted] = wordcounts_chunk[0:inserted]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
