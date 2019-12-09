@@ -98,7 +98,6 @@ def worker(macsy_settings, liwc_dict, start_date, end_date):
                 done = True
                 break
 
-            # No longer storing word count
             indicators_chunk[i,:] = vector
             objectids_chunk[i,:] = np.frombuffer(_id.binary, dtype=np.uint8)
             wordcounts_chunk[i] = wordcount
