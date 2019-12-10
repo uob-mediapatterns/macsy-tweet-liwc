@@ -22,14 +22,13 @@ def extract():
     while True:
         _id  = tweet['_id']
         text = tweet['I']
-        location = tweet.get('L', 'n')
 
-        tweet = yield (text, _id, location)
+        tweet = yield (text, _id)
 
-def pipeline(liwc, bbapi, db, filter):
-    tweets = ( get_tweets(bbapi, filter)
+def pipeline(liwc, bbapi, db, filter, blackboard):
+    tweets = ( get_tweets(bbapi, filter, blackboard=blackboard)
              * extract()
-             * liwc_tweets(liwc, normalize=False, compute_values=False))
+             * liwc_tweets(liwc, normalize=True, compute_values=False))
 
     return tweets
 
@@ -77,9 +76,9 @@ def worker(liwc_dict, start_date, end_date, f):
     tweetcounts = f["tweets"]["tweetcounts"]
 
     # Make sure indicators are normalized
-    p = pipeline(liwc, bbapi, db, filter)
+    p = pipeline(liwc, bbapi, db, filter, blackboard)
 
-    for _id, _, vector, wordcount, _ in p:
+    for _id, vector, wordcount, _ in p:
         i = buckets_lookup.get(find_bucket(_id.generation_time).isoformat(), None)
         if i is None:
             continue
