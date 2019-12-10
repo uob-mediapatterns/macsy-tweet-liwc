@@ -34,19 +34,19 @@ $CREATE_DATASET settings.json datasets/uk_male.hdf5 TWEET "{ 'G': 'm', 'L': { '\
 #{ "Ctrl" : 0, "Nm" : "SourceHT>generalelection2019", "_id" : 75764 }
 
 
-$CREATE_DATASET settings.s11.json datasets/welsh.hdf5 TWEET_PIPE_B "{ 'Tg': 76399 }" $START $END
-$CREATE_DATASET settings.s11.json datasets/brexitparty.hdf5 TWEET_PIPE_B "{ 'Tg': 76401 }" $START $END
-$CREATE_DATASET settings.s11.json datasets/green.hdf5 TWEET_PIPE_B "{ 'Tg': 76402 }" $START $END
-$CREATE_DATASET settings.s11.json datasets/ukip.hdf5 TWEET_PIPE_B "{ 'Tg': 76403 }" $START $END
-$CREATE_DATASET settings.s11.json datasets/conservatives.hdf5 TWEET_PIPE_B "{ 'Tg': 76404 }" $START $END
-$CREATE_DATASET settings.s11.json datasets/snp.hdf5 TWEET_PIPE_B "{ 'Tg': 76405 }" $START $END
-$CREATE_DATASET settings.s11.json datasets/libdem.hdf5 TWEET_PIPE_B "{ 'Tg': 76406 }" $START $END
-$CREATE_DATASET settings.s11.json datasets/dup.hdf5 TWEET_PIPE_B "{ 'Tg': 76407 }" $START $END
-$CREATE_DATASET settings.s11.json datasets/labour.hdf5 TWEET_PIPE_B "{ 'Tg': 76408 }" $START $END
+$CREATE_DATASET settings.s11.json datasets/welsh.hdf5 TWEET_ELECTION "{ 'Tg': 76399 }" $START $END
+$CREATE_DATASET settings.s11.json datasets/brexitparty.hdf5 TWEET_ELECTION "{ 'Tg': 76401 }" $START $END
+$CREATE_DATASET settings.s11.json datasets/green.hdf5 TWEET_ELECTION "{ 'Tg': 76402 }" $START $END
+$CREATE_DATASET settings.s11.json datasets/ukip.hdf5 TWEET_ELECTION "{ 'Tg': 76403 }" $START $END
+$CREATE_DATASET settings.s11.json datasets/conservatives.hdf5 TWEET_ELECTION "{ 'Tg': 76404 }" $START $END
+$CREATE_DATASET settings.s11.json datasets/snp.hdf5 TWEET_ELECTION "{ 'Tg': 76405 }" $START $END
+$CREATE_DATASET settings.s11.json datasets/libdem.hdf5 TWEET_ELECTION "{ 'Tg': 76406 }" $START $END
+$CREATE_DATASET settings.s11.json datasets/dup.hdf5 TWEET_ELECTION "{ 'Tg': 76407 }" $START $END
+$CREATE_DATASET settings.s11.json datasets/labour.hdf5 TWEET_ELECTION "{ 'Tg': 76408 }" $START $END
 
-$CREATE_DATASET settings.s11.json datasets/combined_parties.hdf5 TWEET_PIPE_B "{ 'Tg': 76400 }" $START $END
+$CREATE_DATASET settings.s11.json datasets/combined_parties.hdf5 TWEET_ELECTION "{ 'Tg': 76400 }" $START $END
 
-$CREATE_DATASET settings.s11.json datasets/ge2019.hdf5 TWEET_PIPE_B "{ 'Tg': { '\$in': [ 75761, 75762, 75763, 75765, 75764 ] } }" $START $END
+$CREATE_DATASET settings.s11.json datasets/ge2019.hdf5 TWEET_ELECTION "{ 'Tg': { '\$in': [ 75761, 75762, 75763, 75765, 75764 ] } }" $START $END
 
 
 # Do the main ones like combined #GE's
