@@ -16,6 +16,8 @@ import sys
 import h5py
 import ast
 
+import re
+
 @better_generator
 def extract():
     tweet = yield
@@ -39,7 +41,7 @@ def pipeline(liwc, bbapi, db, filter, blackboard, should_trim_rt):
     tweets = get_tweets(bbapi, filter, blackboard=blackboard) * extract()
 
     if should_trim_rt:
-        tweets *= trim_rt
+        tweets *= trim_rt()
 
     tweets *= liwc_tweets(liwc, normalize=True, compute_values=False)
 
