@@ -1,6 +1,6 @@
 #!/bin/bash
 START="2019-9-1"
-END="2019-12-14"
+END="2019-12-16T12:00:00.0000"
 
 ALL_LOCS="[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54]"
 
@@ -47,10 +47,3 @@ $CREATE_DATASET settings.s11.json datasets/labour.hdf5 TWEET_ELECTION "{ 'Tg': 7
 $CREATE_DATASET settings.s11.json datasets/combined_parties.hdf5 TWEET_ELECTION "{ 'Tg': 76400 }" $START $END
 
 $CREATE_DATASET settings.s11.json datasets/ge2019.hdf5 TWEET_ELECTION "{ 'Tg': { '\$in': [ 75761, 75762, 75763, 75765, 75764 ] } }" $START $END
-
-
-# Do the main ones like combined #GE's
-# Individual parties
-# Combined parties
-
-# Also manually collect what was crawled via the logs or module_run

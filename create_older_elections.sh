@@ -6,6 +6,6 @@ ALL_LOCS="[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
 
 CREATE_DATASET="python -m macsy_tweet_liwc.tools.create_dataset LIWC2007.txt"
 
-$CREATE_DATASET settings.json datasets/2017_election_uk_all.hdf5 TWEET "{ 'L': { '\$in': $ALL_LOCS } }" "2017-03-01" "2017-06-10"
-$CREATE_DATASET settings.json datasets/2015_election_uk_all.hdf5 TWEET "{ 'L': { '\$in': $ALL_LOCS } }" "2015-02-01" "2015-05-9"
-$CREATE_DATASET settings.json datasets/2010_election_uk_all.hdf5 TWEET "{ 'L': { '\$in': $ALL_LOCS } }" "2010-02-01" "2010-05-8"
+$CREATE_DATASET settings.json datasets/2017_election_uk_all.hdf5 TWEET "{ 'L': { '\$in': $ALL_LOCS } }" "2017-03-01" "2017-06-12T12:00:00.0000"
+$CREATE_DATASET settings.json datasets/2015_election_uk_all.hdf5 TWEET "{ 'L': { '\$in': $ALL_LOCS } }" "2015-02-01" "2015-05-11T12:00:00.0000"
+$CREATE_DATASET settings.json datasets/2010_election_uk_all.hdf5 TWEET "{ 'L': { '\$in': $ALL_LOCS } }" "2010-02-01" "2010-05-10T12:00:00.0000"
