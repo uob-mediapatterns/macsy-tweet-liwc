@@ -41,7 +41,7 @@ def pipeline(liwc, bbapi, db, filter, blackboard, should_trim_rt):
     if should_trim_rt:
         tweets *= trim_rt
 
-    tweets *= liwc_tweets(liwc, normalize=True, compute_values=False))
+    tweets *= liwc_tweets(liwc, normalize=True, compute_values=False)
 
     return tweets
 
