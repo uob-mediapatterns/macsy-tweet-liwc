@@ -1,6 +1,6 @@
 from __future__ import division
 
-from liwc import tokenize
+from liwc import CountRules, tokenize
 
 import pymongo.errors
 
@@ -44,12 +44,18 @@ class BetterGenerator:
         return self.g.send(v)
 
     # Really this assumes they're both infinite
+    # i suppose the ideal thing would be to check other has the ability to run once more
+    # and only then send to self?
     @better_generator
     def __mul__(self, other):
         i = yield
         while True:
-            a_o = self.send(i)
-            b_o = other.send(a_o)
+            try:
+                a_o = self.send(i)
+                b_o = other.send(a_o)
+            except StopIteration:
+                return
+
             i = yield b_o
 
     # Assumes the second is infinite
@@ -62,7 +68,10 @@ class BetterGenerator:
             except StopIteration:
                 break
         while True:
-            i = yield other.send(i)
+            try:
+                i = yield other.send(i)
+            except StopIteration:
+                return
 
     def __or__(self, other):
         other.send(self)
@@ -140,7 +149,25 @@ def liwc_docs(liwc, normalize=True, compute_values=True):
 
         doc = yield result
 
+@better_generator
+def rule_liwc_docs(liwc, normalize=True):
+    rule_liwc = CountRules(liwc)
+    doc = yield
+    while True:
+        it = rule_liwc.start()
+        it.send(tokenize(doc[0]))
+
+        (vector, total) = it
+
+        if normalize and total > 0:
+            vector = vector / total
+
+        result = doc[1:] + (vector, total, total)
+
+        doc = yield result
+
 liwc_tweets = liwc_docs
+rule_liwc_tweets = rule_liwc_docs
 
 @better_generator
 def group(liwc, bbapi, tweets):

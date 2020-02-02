@@ -3,7 +3,7 @@ from __future__ import division
 import argparse
 from macsy.api import BlackboardAPI
 from liwc import LIWC
-from macsy_tweet_liwc.core import get_tweets, liwc_tweets, better_generator
+from macsy_tweet_liwc.core import get_tweets, liwc_tweets, rule_liwc_tweets, better_generator
 import dateutil.parser
 import json
 from bson.objectid import ObjectId
@@ -37,13 +37,18 @@ def trim_rt():
 
         tweet = yield (text, _id)
 
-def pipeline(liwc, bbapi, db, filter, blackboard, should_trim_rt):
+def pipeline(liwc, bbapi, db, filter, blackboard, should_trim_rt, indicator_resolution):
     tweets = get_tweets(bbapi, filter, blackboard=blackboard) * extract()
 
     if should_trim_rt:
         tweets *= trim_rt()
 
-    tweets *= liwc_tweets(liwc, normalize=True, compute_values=False)
+    if indicator_resolution == "category":
+        tweets *= liwc_tweets(liwc, normalize=True, compute_values=False)
+    elif indicator_resolution == "rule":
+        tweets *= rule_liwc_tweets(liwc, normalize=True)
+    else:
+        return
 
     return tweets
 
@@ -59,14 +64,14 @@ def load(settings_path):
 def find_bucket(t):
     return t.replace(second=0, microsecond=0)
 
-def worker(liwc_dict, start_date, end_date, should_trim_rt, f):
+def worker(start_date, end_date, f):
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
 
     macsy_settings = f["tweets"].attrs["macsy_settings"]
     bbapi, db = load(macsy_settings)
 
-    with io.open(liwc_dict, 'r', encoding="utf-8") as liwc_file:
+    with io.open(f["tweets"].attrs["liwc_dict"], 'r', encoding="utf-8") as liwc_file:
         liwc = LIWC(liwc_file)
 
     _id_filter = {
@@ -91,7 +96,7 @@ def worker(liwc_dict, start_date, end_date, should_trim_rt, f):
     tweetcounts = f["tweets"]["tweetcounts"]
 
     # Make sure indicators are normalized
-    p = pipeline(liwc, bbapi, db, filter, blackboard, should_trim_rt)
+    p = pipeline(liwc, bbapi, db, filter, blackboard, f["tweets"].attrs["trim_rt"], f["tweets"].attrs["indicator_resolution"])
 
     for _id, vector, wordcount, _ in p:
         i = buckets_lookup.get(find_bucket(_id.generation_time).isoformat(), None)
@@ -102,23 +107,11 @@ def worker(liwc_dict, start_date, end_date, should_trim_rt, f):
         wordcounts[i]   += wordcount
         tweetcounts[i]  += 1
 
-def str2bool(v):
-    if isinstance(v, bool):
-       return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("liwc_dict", help="file containing LIWC dictionary", type=str)
     parser.add_argument("hdf5", help="hdf5 file", type=str)
     parser.add_argument("start_date", help="start date", type=str)
     parser.add_argument("end_date", help="end date", type=str)
-    parser.add_argument("--trim-rt", type=str2bool, nargs="?", const=False, default=False, help="Trim the text RT that appears in front of retweets")
 
     args = parser.parse_args()
 
@@ -126,4 +119,4 @@ if __name__ == "__main__":
     end_date = dateutil.parser.parse(args.end_date)
 
     with h5py.File(args.hdf5, "r+") as f:
-        worker(args.liwc_dict, start_date, end_date, args.trim_rt, f)
+        worker(start_date, end_date, f)
