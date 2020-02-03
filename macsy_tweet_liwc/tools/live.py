@@ -16,6 +16,11 @@ import numpy as np
 import csv
 import sys
 
+
+# even though flu isnt added yet, should just magically work
+# when it is
+chosen_indicator_names = ["affect","posemo","negemo","anx","anger","sad","flu"]
+
 '''
 Could make it a non-datebased blackboard
 Do I transpose xs? potentially easier
@@ -93,6 +98,9 @@ def worker(macsy_settings, liwc_dict, blackboard, checkpoint):
     with io.open(liwc_dict, 'r', encoding="utf-8") as liwc_file:
         liwc = LIWC(liwc_file)
 
+
+    chosen_indicator_idxs = np.isin([v for v,_ in liwc.categories.values()], chosen_indicator_names)
+
     now = datetime.now(tz=pytz.utc)
 
     documents = list(db[blackboard].find())
@@ -111,7 +119,7 @@ def worker(macsy_settings, liwc_dict, blackboard, checkpoint):
         if last_updated < oldest_possible:
             # If a document has become so old the state is no longer relavent, clear it
             # saves us having to create all the intermediate data, and then delete it
-            doc["state"]["M"] = np.zeros(6, dtype=np.float64)
+            doc["state"]["M"] = np.zeros(len(chosen_indicator_idxs), dtype=np.float64)
             doc["state"]["k"] = 0
             doc["state"]["last_updated"] = oldest_possible
 
@@ -158,7 +166,7 @@ def worker(macsy_settings, liwc_dict, blackboard, checkpoint):
                     doc["ys"] = doc["ys"][-doc["num_interval"]+1:] + [y]
                     doc["next_x"] = end
 
-                    doc["state"]["M"] = np.zeros(6, dtype=np.float64)
+                    doc["state"]["M"] = np.zeros(len(chosen_indicator_idxs), dtype=np.float64)
                     doc["state"]["k"] = 0
                     doc["state"]["last_updated"] = end
 
@@ -178,7 +186,11 @@ def worker(macsy_settings, liwc_dict, blackboard, checkpoint):
 
                 # add tweet to state
                 doc["state"]["k"] += 1
-                doc["state"]["M"] += (vector[26:26+6] - doc["state"]["M"]) / doc["state"]["k"]
+                
+                # If we added or removed indicators since last time... truncate or pad. Not perfect if order is changed but what can you do
+                # Only padding for now
+                doc["state"]["M"] = np.pad(doc["state"]["M"], (0, sum(chosen_indicator_idxs) - len(doc["state"]["M"])), "constant")
+                doc["state"]["M"] += (vector[chosen_indicator_idxs] - doc["state"]["M"]) / doc["state"]["k"]
                 doc["state"]["last_updated"] = _id.generation_time
     
     # Moved inserting empty xs/ys into the client side, as a graph shift
