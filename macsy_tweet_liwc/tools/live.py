@@ -119,7 +119,7 @@ def worker(macsy_settings, liwc_dict, blackboard, checkpoint):
         if last_updated < oldest_possible:
             # If a document has become so old the state is no longer relavent, clear it
             # saves us having to create all the intermediate data, and then delete it
-            doc["state"]["M"] = np.zeros(len(chosen_indicator_idxs), dtype=np.float64)
+            doc["state"]["M"] = np.zeros(sum(chosen_indicator_idxs), dtype=np.float64)
             doc["state"]["k"] = 0
             doc["state"]["last_updated"] = oldest_possible
 
@@ -166,7 +166,7 @@ def worker(macsy_settings, liwc_dict, blackboard, checkpoint):
                     doc["ys"] = doc["ys"][-doc["num_interval"]+1:] + [y]
                     doc["next_x"] = end
 
-                    doc["state"]["M"] = np.zeros(len(chosen_indicator_idxs), dtype=np.float64)
+                    doc["state"]["M"] = np.zeros(sum(chosen_indicator_idxs), dtype=np.float64)
                     doc["state"]["k"] = 0
                     doc["state"]["last_updated"] = end
 
