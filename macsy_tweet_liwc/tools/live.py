@@ -178,7 +178,16 @@ def worker(macsy_settings, liwc_dict, blackboard, checkpoint):
 
                         m = doc["state"]["M"]
                         doc["state"]["M"] = list(m)
-                        db[blackboard].find_one_and_replace({"_id": doc["_id"]}, doc)
+
+                        while True:
+                            try:
+                                db[blackboard].find_one_and_replace({"_id": doc["_id"]}, doc)
+                                break
+                            except pymongo.errors.OperationFailure as e:
+                                logging.exception(e)
+                                logging.debug("Retrying")
+                                continue
+
                         doc["state"]["M"] = m
 
                         doc["num_intervals"] = 0
@@ -197,12 +206,21 @@ def worker(macsy_settings, liwc_dict, blackboard, checkpoint):
 
     # There's no checking for failed saving here, although it shouldn't matter
     # too much as long as it works the next round
+    # NOTE: Not true anymore. I don't know why I didn't bother before
+    #       Makes more of a difference when you're computing a backlog
+    #       and it fails (and doesnt get restarted)
     for doc in documents:
         doc["state"]["M"] = list(doc["state"]["M"])
         del doc["num_intervals"]
 
-        db[blackboard].find_one_and_replace({"_id": doc["_id"]}, doc)
-        
+        while True:
+            try:
+                db[blackboard].find_one_and_replace({"_id": doc["_id"]}, doc)
+                break
+            except pymongo.errors.OperationFailure as e:
+                logging.exception(e)
+                logging.debug("Retrying")
+                continue
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("tweet-liwc-live", description="Pulls tweets from before 30 minutes ago from TWEET blackboard, processes them with LIWC, and takes period averages and places them into the target blackboard")
